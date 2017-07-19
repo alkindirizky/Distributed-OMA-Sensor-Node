@@ -2,6 +2,8 @@
 #define PROC_SETTING_H_
 
 //----- Common Includes ---------------------------------------------------
+#include "stm32f4xx.h"
+#include "stm32f4xx_hal.h"
 #include <stdint.h>
 #include <string.h>
 
@@ -17,7 +19,10 @@
 
 // ----- setting ------------------------------------------------------------
 #define SIGNAL_SIZE 2048
-#define NFFT 1024
+#define F_SAMPLING 500
+
+#define NFFT 2048
 #define PSD_NWINDOW 8
+#define SUM_WINDOW 767.6f
 
 #endif

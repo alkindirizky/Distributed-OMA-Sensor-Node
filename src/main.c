@@ -4,6 +4,7 @@
 
 #include "procsetting.h"
 #include "acc_driver.h"
+#include "signal_proc.h"
 
 #include "stopwatch.h"
 #include "debug_functions.h"
@@ -23,16 +24,18 @@ static float signal_data[SIGNAL_SIZE] = {0};
 static uint16_t signal_counter = 0;
 
 //variables for autopsd result
-static float psd_data[NFFT] = {0};
+static float psd_data[NFFT/2] = {0};
 static uint16_t psd_wincount = 0;
 
 //variables for FFT result
+//twice the size as each fft point contain two data (imag and real)
 static float fft_data[NFFT] = {0};
 
 // ----- main() ---------------------------------------------------------------
 int main(int argc, char* argv[]){
 	//state machines
 	uint8_t state = S_INIT;
+	uint8_t procphase = 1;
 
 	while(1){
 		if(state == S_INIT){
@@ -46,37 +49,39 @@ int main(int argc, char* argv[]){
 			signal_counter += 32;
 
 			if(signal_counter >= SIGNAL_SIZE){
-				/*debug
-				uint16_t fault_count = 0;
-				fault_count = signal_check(signal_data);
-				if(fault_count>0){
-					trace_printf("data inconsistency, number of fault : %d\n",fault_count);
-				}
-				else{
-					trace_printf("data correct, data size : %d\n",signal_counter);
-					//signal_print(signal_data);
-				}*/
-
 				signal_counter = 0;
 				state = S_PHASE1_SIG_PROC;
 			}
 		}
 		else if(state == S_PHASE1_SIG_PROC){
-			//create autopsd
-			//PSD FUNCTION HERE
+			//create autopsd, perform fft first
+			fft_calc(signal_data, fft_data);
+			psd_calc(fft_data, psd_data);
 			psd_wincount += 1;
 
 			if(psd_wincount >= PSD_NWINDOW){
+				//sufficient window
 				psd_wincount = 0;
 				state = S_PHASE1_PEAK_SEL;
+			}else{
+				//obtain new window
+				state = S_PHASE1_SIG_ACQ;
 			}
-
 		}
 		else if(state == S_PHASE1_PEAK_SEL){
+			trace_printf("Selecting peaks\n");
 
 		}
 		else if(state == S_PHASE1_TRANSMIT){
 
+			if(procphase ==2){
+				//central instruct to do phase 2
+				state = S_PHASE2_SIG_ACQ;
+			}
+			else{
+				//central instruct to remain in phase 1
+				state = S_PHASE1_SIG_ACQ;
+			}
 		}
 		else if(state == S_PHASE2_SIG_ACQ){
 

@@ -26,3 +26,19 @@ void signal_print(float* acc_data){
 	}
 	trace_printf("PRINTING SIGNAL IS FINISHED----\n");
 }
+
+void psd_print(float* psd_data){
+	trace_printf("START PRINTING PSD ----\n");
+	for(uint16_t i=0; i<NFFT/2; i++){
+		trace_printf("%0.4f,\n", psd_data[i]);
+	}
+	trace_printf("PRINTING PSD IS FINISHED----\n");
+}
+
+void fft_print(float* fft_data){
+	trace_printf("START PRINTING FFT ----\n");
+	for(uint16_t i=0; i<NFFT; i+=2){
+		trace_printf("%0.4f + %0.4f ,\n", fft_data[i], fft_data[i+1]);
+	}
+	trace_printf("PRINTING FFT IS FINISHED----\n");
+}
