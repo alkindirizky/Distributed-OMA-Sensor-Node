@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include "stopwatch.h"
+#include "diag/Trace.h"
 
 #include "stm32f4xx.h"
 
@@ -10,6 +11,7 @@ static uint32_t tend = 0;
 void stopwatch_init(void){
 	InitCycleCounter();
 	EnableCycleCounter();
+	trace_printf("System Clock Rate: %d Hz\n",SystemCoreClock);
 }
 
 //reset the stopwatch
@@ -24,7 +26,7 @@ void stopwatch_start(void){
 	tstart = GetCycleCounter();
 }
 
-//stop timer
+//stop timer, return time as microsecond
 float stopwatch_end(void){
 	tend = GetCycleCounter();
 	float etime = (float)(tend - tstart);

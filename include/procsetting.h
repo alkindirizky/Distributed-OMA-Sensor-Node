@@ -25,4 +25,7 @@
 #define PSD_NWINDOW 8
 #define SUM_WINDOW 767.6f
 
+#define FIL_ORDER 3
+#define FIL_LEN 13
+
 #endif

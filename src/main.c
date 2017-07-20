@@ -37,6 +37,9 @@ int main(int argc, char* argv[]){
 	uint8_t state = S_INIT;
 	uint8_t procphase = 1;
 
+	//init stopwatch
+	stopwatch_init();
+
 	while(1){
 		if(state == S_INIT){
 			//init devices
@@ -55,8 +58,12 @@ int main(int argc, char* argv[]){
 		}
 		else if(state == S_PHASE1_SIG_PROC){
 			//create autopsd, perform fft first
+			//stopwatch_start();
 			fft_calc(signal_data, fft_data);
+			//trace_printf("fft tcalc (us), %0.3f\n",stopwatch_end());
+			//stopwatch_start();
 			psd_calc(fft_data, psd_data);
+			//trace_printf("psd tcalc (us), %0.3f\n",stopwatch_end());
 			psd_wincount += 1;
 
 			if(psd_wincount >= PSD_NWINDOW){
@@ -69,11 +76,15 @@ int main(int argc, char* argv[]){
 			}
 		}
 		else if(state == S_PHASE1_PEAK_SEL){
-			trace_printf("Selecting peaks\n");
+			//selecting peak from PSD data
+			stopwatch_start();
+			peak_sel(psd_data);
+			trace_printf("peaksel tcalc (us), %0.3f\n",stopwatch_end());
 
+			state = S_PHASE1_TRANSMIT;
 		}
 		else if(state == S_PHASE1_TRANSMIT){
-
+			break;
 			if(procphase ==2){
 				//central instruct to do phase 2
 				state = S_PHASE2_SIG_ACQ;
