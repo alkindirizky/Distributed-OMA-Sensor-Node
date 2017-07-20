@@ -68,19 +68,18 @@ void fft_calc(float* signal_data, float* fft_data){
 }
 
 /* perform smoothing & peak area selection */
-void peak_sel(float* psd_data){
+uint16_t peak_sel(float* psd_data, parea* peak_area){
 	//smooth the psd
 	smooth(psd_data, PSD_SIZE);
 
 	//obtain the peak locations, assuming max peak half the size of PSD
-	uint16_t peak_loc[PSD_SIZE/2] = {0};
+	uint16_t peak_loc[MAX_PEAKNUM] = {0};
 	uint16_t peak_num = peak_loc_obtain(psd_data, peak_loc);
 
-	trace_printf("PRINTING PEAK INFORMATION, NPEAK :%d\n",peak_num);
-	for(uint16_t i = 0; i<peak_num; i++){
-		trace_printf("%d, ",peak_loc[i]);
-	}
-	trace_printf("\nPRINTING PEAK FINISHED\n");
+	//combine the peaks into peak area location
+	uint16_t num_area = peak_area_obtain(peak_loc, peak_num, peak_area);
+
+	return num_area;
 }
 
 
@@ -180,6 +179,71 @@ uint16_t peak_loc_obtain(float* psd_data, uint16_t* peak_loc){
 		//peak_loc[peak_num] = unfil_peak_loc[i];
 	}
 	return peak_num;
+}
+
+/*create and combine peak areas*/
+uint16_t peak_area_obtain(uint16_t* peak_loc, uint16_t peak_num, parea* peak_area){
+	uint16_t num_area = 0;
+	parea temp_parea[MAX_PEAKNUM] = {0};
+
+	//create area of intervals
+	for(uint16_t i=0; i<peak_num; i++){
+		temp_parea[i].start = peak_loc[i] - PAREA_BAND/2;
+		temp_parea[i].end = peak_loc[i] + PAREA_BAND/2;
+	}
+
+	//init variables
+	parea cand_parea;
+	parea new_parea[MAX_PEAKNUM];
+	uint16_t new_parea_num = 0;
+	uint16_t temp_parea_num = peak_num;
+
+	//merge the intervals
+	while(temp_parea_num != 0){
+	    //reset the candidate agains
+	    cand_parea = temp_parea[0];
+	    new_parea_num = 0;
+
+	    for(uint16_t kk = 1; kk < temp_parea_num; kk++){
+	        if(temp_parea[kk].start < cand_parea.start){
+	            if(temp_parea[kk].end < cand_parea.start){
+	                //new area found
+	                new_parea[new_parea_num].start = temp_parea[kk].start;
+	                new_parea[new_parea_num].end = temp_parea[kk].end;
+	                new_parea_num = new_parea_num + 1;
+	            }
+	            else if(temp_parea[kk].end < cand_parea.end){
+	                //intersect with current area
+	                cand_parea.start = temp_parea[kk].start;
+	            }
+	            else{
+	                //supercede the current area
+	                cand_parea.start = temp_parea[kk].start;
+	                cand_parea.end = temp_parea[kk].end;
+	            }
+	        }
+	        else if(temp_parea[kk].start > cand_parea.end){
+	            //new area found
+	            new_parea[new_parea_num].start = temp_parea[kk].start;
+	            new_parea[new_parea_num].end = temp_parea[kk].end;
+	            new_parea_num = new_parea_num + 1;
+	        }
+	        else if(temp_parea[kk].end > cand_parea.end){
+	            cand_parea.end = temp_parea[kk].end;
+	        }
+	    }
+
+	    //use the new obtained area for next iteration
+	    memcpy(temp_parea, new_parea, new_parea_num*sizeof(parea));
+	    temp_parea_num = new_parea_num;
+
+	    //save the cand_parea
+	    peak_area[num_area].start = cand_parea.start;
+	    peak_area[num_area].end = cand_parea.end;
+	    num_area++;
+	}
+
+	return num_area;
 }
 
 /*smooth the input using savitzky-golay*/

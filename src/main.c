@@ -23,13 +23,14 @@
 static float signal_data[SIGNAL_SIZE] = {0};
 static uint16_t signal_counter = 0;
 
-//variables for autopsd result
+//variables for autopsd result & first phase peak selection
 static float psd_data[PSD_SIZE] = {0};
 static uint16_t psd_wincount = 0;
+static parea peak_area[MAX_PEAKNUM] = {0};
+static uint16_t peak_area_num = 0;
 
-//variables for FFT result
-//twice the size as each fft point contain two data (imag and real)
-static float fft_data[NFFT] = {0};
+//variables for FFT result & 2nd phase peak selection
+static float fft_data[NFFT] = {0}; //arranged into real(1), imag(1), real(2), imag(3)..so on
 
 // ----- main() ---------------------------------------------------------------
 int main(int argc, char* argv[]){
@@ -78,8 +79,10 @@ int main(int argc, char* argv[]){
 		else if(state == S_PHASE1_PEAK_SEL){
 			//selecting peak from PSD data
 			stopwatch_start();
-			peak_sel(psd_data);
+			peak_area_num = peak_sel(psd_data, peak_area);
 			trace_printf("peaksel tcalc (us), %0.3f\n",stopwatch_end());
+
+			parea_print(peak_area, peak_area_num);
 
 			state = S_PHASE1_TRANSMIT;
 		}

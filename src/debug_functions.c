@@ -42,3 +42,11 @@ void fft_print(float* fft_data){
 	}
 	trace_printf("PRINTING FFT IS FINISHED----\n");
 }
+
+void parea_print(parea* peak_area, uint16_t peak_num){
+	trace_printf("PRINTING AREA INFORMATION, NPEAK :%d\n",peak_num);
+	for(uint16_t i = 0; i<peak_num; i++){
+		trace_printf("start : %d, end : %d\n",peak_area[i].start, peak_area[i].end);
+	}
+	trace_printf("PRINTING AREA FINISHED\n");
+}
