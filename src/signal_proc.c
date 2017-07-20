@@ -50,7 +50,7 @@ void psd_calc(float* fft_data, float* psd_data){
  * {real(1), imag(1), real(2), imag(2),..,real(n), imag(n)}a */
 void fft_calc(float* signal_data, float* fft_data){
 	arm_status status;
-	float signal_mean = mean_calc(signal_data);
+	float signal_mean = mean_calc(signal_data, SIGNAL_SIZE);
 	arm_rfft_fast_instance_f32 fftset;
 
 	//init fft
@@ -67,12 +67,120 @@ void fft_calc(float* signal_data, float* fft_data){
 	}
 }
 
-/* perform smoothing & peak selection */
+/* perform smoothing & peak area selection */
 void peak_sel(float* psd_data){
 	//smooth the psd
-	smooth(psd_data, NFFT/2);
+	smooth(psd_data, PSD_SIZE);
+
+	//obtain the peak locations, assuming max peak half the size of PSD
+	uint16_t peak_loc[PSD_SIZE/2] = {0};
+	uint16_t peak_num = peak_loc_obtain(psd_data, peak_loc);
+
+	trace_printf("PRINTING PEAK INFORMATION, NPEAK :%d\n",peak_num);
+	for(uint16_t i = 0; i<peak_num; i++){
+		trace_printf("%d, ",peak_loc[i]);
+	}
+	trace_printf("\nPRINTING PEAK FINISHED\n");
 }
 
+
+/* obtain the peak locations, return the number of peak obtained*/
+uint16_t peak_loc_obtain(float* psd_data, uint16_t* peak_loc){
+	//calculate thresholds
+	float maxval = max_calc(psd_data,PSD_SIZE);
+	float minval = min_calc(psd_data,PSD_SIZE);
+	float peak_dom = (maxval - minval)/PEAK_DOM_DIV;
+	float peak_thresh = minval + PEAK_THRESH_MULT*(maxval - minval);
+	uint16_t unfil_peak_loc[PSD_SIZE] = {0};
+
+	//obtain the maxima and minima index
+	uint16_t minmax_ind[PSD_SIZE] = {0};
+
+	uint16_t minmax_len = 0;
+	for(uint16_t i = 1; i<(PSD_SIZE-1); i++){
+		if((psd_data[i] > psd_data [i-1]) && (psd_data[i] > psd_data [i+1])){
+			minmax_ind[minmax_len] = i;
+			minmax_len++;
+		}
+		else if((psd_data[i] < psd_data [i-1]) && (psd_data[i] < psd_data [i+1])){
+			minmax_ind[minmax_len] = i;
+			minmax_len++;
+		}
+	}
+
+	//peak number counter
+	uint16_t unfil_peak_num = 0;
+
+	//peak finding process
+	if(minmax_len > 2){
+		//set initial values
+		uint16_t i = 0;
+		float lvalley = minval;
+		uint8_t foundpeak = 0;
+		float temp_peak_mag = 0;
+		uint16_t temp_peak_loc = 0;
+
+		//the algorithm works by assuming first data is maxima
+		if(psd_data[minmax_ind[0]] >= psd_data[minmax_ind[1]]){
+			temp_peak_mag = psd_data[minmax_ind[0]];
+			temp_peak_loc = 0;
+			i = 1;
+		}
+		else{
+			temp_peak_mag = psd_data[minmax_ind[1]];
+			temp_peak_loc = 1;
+			i = 2;
+		}
+
+		while(i < minmax_len){
+			i = i+1;
+
+			//if peak obtained, reset the init values
+			if(foundpeak == 1){
+				temp_peak_mag = minval;
+				foundpeak = 0;
+			}
+
+			//found new maxima, check if larger than previous maxima
+			// and dominant enough compared to left valley, based on threshold
+			if((psd_data[minmax_ind[i]] > temp_peak_mag) && (psd_data[minmax_ind[i]] > lvalley + peak_dom)){
+				temp_peak_mag = psd_data[minmax_ind[i]];
+				temp_peak_loc = minmax_ind[i];
+			}
+
+			//move to valley;
+			if(i == minmax_len - 1){
+				break; //avoid array out of index
+			}
+			i = i+1;
+
+			//check valley
+			if(temp_peak_mag > psd_data[minmax_ind[i]] + peak_dom){
+				//peak obtained
+				foundpeak = 1;
+				lvalley = psd_data[minmax_ind[i]];
+
+				//save the peak
+				unfil_peak_loc[unfil_peak_num] = temp_peak_loc;
+				unfil_peak_num = unfil_peak_num + 1;
+			}
+			else if(psd_data[minmax_ind[i]] < lvalley){ //New left valley
+				lvalley = psd_data[minmax_ind[i]];
+			}
+		}
+	}
+
+	//apply tresholding value
+	uint16_t peak_num = 0;
+	for(uint16_t i = 0; i < unfil_peak_num ; i++){
+		if(psd_data[unfil_peak_loc[i]] > peak_thresh){
+			peak_loc[peak_num] = unfil_peak_loc[i];
+			peak_num++;
+		}
+		//peak_loc[peak_num] = unfil_peak_loc[i];
+	}
+	return peak_num;
+}
 
 /*smooth the input using savitzky-golay*/
 void smooth(float* input, uint16_t input_len){
@@ -129,11 +237,35 @@ void fft_sel(float* fft_data){
 }
 
 /* calculate the mean of signal */
-float mean_calc(float* signal_data){
+float mean_calc(float* input, uint16_t input_len){
 	float meanval = 0;
-	for(uint16_t i = 0 ; i<SIGNAL_SIZE; i++){
-		meanval += signal_data[i];
+	for(uint16_t i = 0 ; i<input_len; i++){
+		meanval += input[i];
 	}
 
 	return (meanval/SIGNAL_SIZE);
+}
+
+/* calculate the max of signal */
+float max_calc(float* input, uint16_t input_len){
+	float tempmax = mean_calc(input, input_len);
+	for(uint16_t i = 0 ; i<input_len; i++){
+		if(input[i]>tempmax){
+			tempmax = input[i];
+		}
+	}
+
+	return tempmax;
+}
+
+/* calculate the min of signal */
+float min_calc(float* input, uint16_t input_len){
+	float tempmin = mean_calc(input, input_len);
+	for(uint16_t i = 0 ; i<input_len; i++){
+		if(input[i]<tempmin){
+			tempmin = input[i];
+		}
+	}
+
+	return tempmin;
 }

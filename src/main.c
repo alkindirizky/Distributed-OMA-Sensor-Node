@@ -24,7 +24,7 @@ static float signal_data[SIGNAL_SIZE] = {0};
 static uint16_t signal_counter = 0;
 
 //variables for autopsd result
-static float psd_data[NFFT/2] = {0};
+static float psd_data[PSD_SIZE] = {0};
 static uint16_t psd_wincount = 0;
 
 //variables for FFT result
