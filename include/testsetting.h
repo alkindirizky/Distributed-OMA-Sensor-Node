@@ -1,8 +1,8 @@
 #ifndef TESTSETTING_H_
 #define TESTSETTING_H_
 
-#define ITER1 3
-#define ITER2 7
+#define ITER1 1
+#define ITER2 1
 
 
 

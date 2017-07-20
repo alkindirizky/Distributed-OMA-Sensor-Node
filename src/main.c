@@ -33,6 +33,7 @@ static uint16_t peak_num = 0;
 //variables for FFT result & 2nd phase peak selection
 static float fft_data[NFFT] = {0}; //arranged into real(1), imag(1), real(2), imag(3)..so on
 static pinfo peak_info; //contain information about peak area of interest
+static float sel_fft[NFFT] = {0}; //contain fft data that has been selected
 
 // ----- main() ---------------------------------------------------------------
 int main(int argc, char* argv[]){
@@ -109,9 +110,10 @@ int main(int argc, char* argv[]){
 			parea_print(peak_info.area, peak_info.numarea);
 		}
 		else if(state == S_PHASE2_SIG_PROC){
-			stopwatch_start();
+			//stopwatch_start();
 			fft_calc(signal_data, fft_data);
-			trace_printf("fft tcalc (us), %0.3f\n",stopwatch_end());
+			//trace_printf("fft tcalc (us), %0.3f\n",stopwatch_end());
+			fft_sel(fft_data, sel_fft, &peak_info);
 
 			state = S_PHASE2_COM;
 		}

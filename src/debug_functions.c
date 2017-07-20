@@ -38,7 +38,7 @@ void psd_print(float* psd_data){
 void fft_print(float* fft_data){
 	trace_printf("START PRINTING FFT ----\n");
 	for(uint16_t i=0; i<NFFT; i+=2){
-		trace_printf("%0.4f + %0.4f ,\n", fft_data[i], fft_data[i+1]);
+		trace_printf("%0.4f + %0.4fi,\n", fft_data[i], fft_data[i+1]);
 	}
 	trace_printf("PRINTING FFT IS FINISHED----\n");
 }
@@ -55,7 +55,28 @@ void peak_print(uint16_t* peak_loc, uint16_t peak_num){
 void parea_print(parea* peak_area, uint16_t peak_num){
 	trace_printf("PRINTING AREA INFORMATION, NAREA :%d\n",peak_num);
 	for(uint16_t i = 0; i<peak_num; i++){
-		trace_printf("start : %d, end : %d\n",peak_area[i].start, peak_area[i].end);
+		trace_printf("area : %d : %d\n",peak_area[i].start, peak_area[i].end);
 	}
 	trace_printf("PRINTING AREA FINISHED\n");
+}
+
+
+void selfft_print(float* sel_fft, pinfo* peak_info){
+	trace_printf("PRINTING SELECTED FFT, NAREA :%d------\n", peak_info->numarea);
+	uint16_t start = 0;
+	uint16_t band = ((peak_info->area[0].end - peak_info->area[0].start) + 1)*2;
+	uint16_t end = start + band;
+	uint16_t i = 0;
+	while(i < peak_info->numarea){
+		trace_printf("area%d = [", i);
+		for(uint16_t kk = start; kk < end; kk+=2){
+			trace_printf("%0.3f + %0.3fi, ", sel_fft[kk], sel_fft[kk+1]);
+		}
+		i++;
+		band = ((peak_info->area[i].end - peak_info->area[i].start) + 1)*2;
+		start += band;
+		end += band;
+		trace_printf("]\n");
+	}
+	trace_printf("FINISHED PRINTING SELECTED FFT------\n");
 }
