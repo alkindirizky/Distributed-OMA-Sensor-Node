@@ -18,6 +18,7 @@
 #define S_PHASE1_COM 5
 #define S_PHASE2_SIG_PROC 6
 #define S_PHASE2_COM 7
+#define S_SLEEP 8
 
 // ----- setting ------------------------------------------------------------
 #define SIGNAL_SIZE 2048
@@ -34,7 +35,7 @@
 #define MAX_PEAKNUM PSD_SIZE/16
 #define PEAK_DOM_DIV 20.00f
 #define PEAK_THRESH_MULT 0.4f
-
 #define PAREA_BAND 40 //sample size, equal to 20Hz for Fsampling 500 & NFFT 2048
+#define PEAK_BAND 12
 
 #endif

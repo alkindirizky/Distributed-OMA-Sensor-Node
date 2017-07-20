@@ -3,7 +3,6 @@
 #include "arm_common_tables.h"
 #include "arm_const_structs.h"
 #include "arm_math.h"
-#include "diag/Trace.h"
 
 uint16_t testing_peakloc[MAX_PEAKNUM] = {0}; //todo: erase later;
 uint16_t testing_peaknum = {0}; //todo: erase later;
@@ -70,23 +69,22 @@ void fft_calc(float* signal_data, float* fft_data){
 	}
 }
 
+/* perform fft data selection
+ * based on natural frequencyinformation
+ */
+void fft_sel(float* fft_data, pinfo peak_info){
+
+}
+
 /* perform smoothing & peak area selection */
-uint16_t peak_sel(float* psd_data, parea* peak_area){
+uint16_t peak_sel(float* psd_data, uint16_t* peak_loc){
 	//smooth the psd
 	smooth(psd_data, PSD_SIZE);
 
 	//obtain the peak locations, assuming max peak half the size of PSD
-	uint16_t peak_loc[MAX_PEAKNUM] = {0};
 	uint16_t peak_num = peak_loc_obtain(psd_data, peak_loc);
 
-	//todo:for testing, erase two var assign lines below later
-	testing_peaknum = peak_num;
-	memcpy(testing_peakloc, peak_loc, peak_num*sizeof(uint16_t));
-
-	//combine the peaks into peak area location
-	uint16_t num_area = peak_area_obtain(peak_loc, peak_num, peak_area);
-
-	return num_area;
+	return peak_num;
 }
 
 
@@ -188,7 +186,7 @@ uint16_t peak_loc_obtain(float* psd_data, uint16_t* peak_loc){
 	return peak_num;
 }
 
-/*create and combine peak areas*/
+/*create and combine peak areas, CURRENTLY UNUSED*/
 uint16_t peak_area_obtain(uint16_t* peak_loc, uint16_t peak_num, parea* peak_area){
 	uint16_t num_area = 0;
 	parea temp_parea[MAX_PEAKNUM] = {0};
@@ -298,13 +296,6 @@ void smooth(float* input, uint16_t input_len){
 	}
 
 	memcpy(input, tempholder,input_len*sizeof(float));
-}
-
-/* perform fft data selection
- * based on natural frequencyinformation
- */
-void fft_sel(float* fft_data){
-
 }
 
 /* calculate the mean of signal */
