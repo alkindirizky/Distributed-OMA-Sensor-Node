@@ -3,6 +3,9 @@
 
 #include "procsetting.h"
 
+extern uint16_t testing_peakloc[MAX_PEAKNUM]; //todo: erase later;
+extern uint16_t testing_peaknum; //todo: erase later;
+
 /* ---------structure for saving peak area -------*/
 typedef struct{
 	uint16_t start;

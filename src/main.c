@@ -31,12 +31,15 @@ static uint16_t peak_area_num = 0;
 
 //variables for FFT result & 2nd phase peak selection
 static float fft_data[NFFT] = {0}; //arranged into real(1), imag(1), real(2), imag(3)..so on
+static uint16_t info_peakloc[MAX_PEAKNUM] = {0};
+static uint16_t info_peaknum = 0;
+static parea peak_band[MAX_PEAKNUM] ={0};
 
 // ----- main() ---------------------------------------------------------------
 int main(int argc, char* argv[]){
 	//state machines
 	uint8_t state = S_INIT;
-	uint8_t procphase = 1;
+	uint8_t procphase = PHASE1;
 
 	//init stopwatch
 	stopwatch_init();
@@ -45,16 +48,21 @@ int main(int argc, char* argv[]){
 		if(state == S_INIT){
 			//init devices
 			accelero_init();
-			state = S_PHASE1_SIG_ACQ;
+			state = S_PHASE_SIG_ACQ;
 		}
-		else if(state == S_PHASE1_SIG_ACQ){
+		else if(state == S_PHASE_SIG_ACQ){
 			//polling signal data and update counter
 			accelero_fifo_poll(signal_data + signal_counter);
 			signal_counter += 32;
 
 			if(signal_counter >= SIGNAL_SIZE){
 				signal_counter = 0;
-				state = S_PHASE1_SIG_PROC;
+				if(procphase == PHASE1){
+					state = S_PHASE1_SIG_PROC;
+				}
+				else if(procphase == PHASE2){
+					state = S_PHASE2_SIG_PROC;
+				}
 			}
 		}
 		else if(state == S_PHASE1_SIG_PROC){
@@ -73,7 +81,7 @@ int main(int argc, char* argv[]){
 				state = S_PHASE1_PEAK_SEL;
 			}else{
 				//obtain new window
-				state = S_PHASE1_SIG_ACQ;
+				state = S_PHASE_SIG_ACQ;
 			}
 		}
 		else if(state == S_PHASE1_PEAK_SEL){
@@ -84,26 +92,24 @@ int main(int argc, char* argv[]){
 
 			parea_print(peak_area, peak_area_num);
 
-			state = S_PHASE1_TRANSMIT;
+			state = S_PHASE1_COM;
 		}
-		else if(state == S_PHASE1_TRANSMIT){
-			break;
-			if(procphase ==2){
-				//central instruct to do phase 2
-				state = S_PHASE2_SIG_ACQ;
-			}
-			else{
-				//central instruct to remain in phase 1
-				state = S_PHASE1_SIG_ACQ;
-			}
-		}
-		else if(state == S_PHASE2_SIG_ACQ){
+		else if(state == S_PHASE1_COM){
+			//central instruct to do phase 2
+			/*todo : will be replaced by packet handler later*/
+			procphase = PHASE2;
+			info_peaknum = testing_peaknum;
+			memcpy(info_peakloc, testing_peakloc, testing_peaknum*sizeof(uint16_t));
 
+			peak_print(info_peakloc, info_peaknum);
+			break;
+
+			state = S_PHASE_SIG_ACQ;
 		}
 		else if(state == S_PHASE2_SIG_PROC){
 
 		}
-		else if(S_PHASE2_TRANSMIT){
+		else if(S_PHASE2_COM){
 
 		}
 		else{

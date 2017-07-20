@@ -5,6 +5,9 @@
 #include "arm_math.h"
 #include "diag/Trace.h"
 
+uint16_t testing_peakloc[MAX_PEAKNUM] = {0}; //todo: erase later;
+uint16_t testing_peaknum = {0}; //todo: erase later;
+
 /*-------------------- LOCAL CONSTANTS -----------------------------*/
 
 static const float hannwindow[SIGNAL_SIZE] = { //hanning window coeff
@@ -75,6 +78,10 @@ uint16_t peak_sel(float* psd_data, parea* peak_area){
 	//obtain the peak locations, assuming max peak half the size of PSD
 	uint16_t peak_loc[MAX_PEAKNUM] = {0};
 	uint16_t peak_num = peak_loc_obtain(psd_data, peak_loc);
+
+	//todo:for testing, erase two var assign lines below later
+	testing_peaknum = peak_num;
+	memcpy(testing_peakloc, peak_loc, peak_num*sizeof(uint16_t));
 
 	//combine the peaks into peak area location
 	uint16_t num_area = peak_area_obtain(peak_loc, peak_num, peak_area);
