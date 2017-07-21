@@ -93,6 +93,7 @@ int main(int argc, char* argv[]){
 			//stopwatch_start();
 			peak_num = peak_sel(psd_data, peak_loc);
 			//trace_printf("peaksel tcalc (us), %0.3f\n",stopwatch_end());
+			peak_print(peak_loc,peak_num);
 
 			state = S_PHASE1_COM;
 		}
@@ -106,8 +107,6 @@ int main(int argc, char* argv[]){
 				dummy_receive_pinfo(&peak_info, peak_loc, peak_num);
 			}
 			state = S_PHASE_SIG_ACQ;
-
-			parea_print(peak_info.area, peak_info.numarea);
 		}
 		else if(state == S_PHASE2_SIG_PROC){
 			//stopwatch_start();
@@ -130,7 +129,6 @@ int main(int argc, char* argv[]){
 					dummy_receive_pinfo(&peak_info, peak_loc, peak_num);
 				}
 
-				parea_print(peak_info.area, peak_info.numarea);
 				trace_printf("nex_iteration:%d\n", peak_info.numiter);
 				if(peak_info.numiter == 0){ //for testing
 					state = S_SLEEP; //go to sleep
