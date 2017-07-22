@@ -10,8 +10,10 @@
 #define TTYPE_PEAKLOC 1
 #define TTYPE_FFT 2
 
+#define MAX_PAYLOAD_SIZE 84 //in byte
+
 void transmit_peakloc(uint16_t* peak_loc, uint16_t peak_num);
-void transmit_fft(void);
+void transmit_fft(float* fft_data, uint16_t fft_datacount);
 uint8_t dummy_receive_check(void);
 void dummy_receive_pinfo(pinfo* peak_info, uint16_t* peak_loc, uint16_t peak_num);
 

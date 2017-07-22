@@ -1,26 +1,47 @@
-#include <stdlib.h>
+#include <procsetting.h>
 #include "comm_handler.h"
 #include "testsetting.h"
+#include "diag/Trace.h"
 
 //transmit peak information
 void transmit_peakloc(uint16_t* peak_loc, uint16_t peak_num){
-	uint8_t* payload;
-	payload = (uint8_t*) malloc(peak_num*sizeof(uint16_t) + 1);
+	uint8_t payload[MAX_PAYLOAD_SIZE];
 
-	//information about type of package
-	payload[0] = TTYPE_PEAKLOC;
-	uint8_t pload_ind = 1;
-	for(uint16_t i = 0; i<peak_num; i++){
-		payload[pload_ind] = peak_loc[i] & 0xff; //LSB
-		payload[pload_ind+1] = peak_loc[i] >> 8;
-		pload_ind += 2;
-	}
+	//copy the header
+	payload[0] = TTYPE_PEAKLOC; //packet type
+	payload[1] = 1; //number of frame
+	payload[2] = 0; //frame id
+	payload[3] = peak_num; //number of packet
+
+	//copy the data
+	memcpy(payload + 4, peak_loc, peak_num*sizeof(uint16_t));
 
 	/*todo send the payload to radio driver*/
 }
 
 //transmit fft data
-void transmit_fft(void){
+void transmit_fft(float* fft_data, uint16_t fft_datacount){
+	uint8_t payload[MAX_PAYLOAD_SIZE];
+	uint16_t size_remainder = (fft_datacount*4 + 3) % MAX_PAYLOAD_SIZE;//in byte
+	uint16_t num_packet = ((fft_datacount*4 + 3) - size_remainder)/ MAX_PAYLOAD_SIZE;
+
+	trace_printf("datasize : %d, number of packet : %d\n", fft_datacount, num_packet);
+
+	for(uint16_t i=0; i<num_packet;i++){
+		//copy the header
+		payload[0] = TTYPE_PEAKLOC; //packet type
+		payload[1] = 1; //number of frame
+		payload[2] = i; //frame id
+
+		if(i == num_packet - 1){
+			memcpy(payload+3, fft_data, size_remainder*sizeof(uint8_t));
+		}
+		else{
+			memcpy(payload+3, fft_data, (MAX_PAYLOAD_SIZE - 3)*sizeof(uint8_t));
+		}
+
+		/*TODO* Transmit here*/
+	}
 
 }
 

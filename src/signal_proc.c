@@ -72,7 +72,7 @@ void fft_calc(float* signal_data, float* fft_data){
 /* perform fft data selection
  * based on natural frequencyinformation
  */
-void fft_sel(float* fft_data, float* sel_fft, pinfo* peak_info){
+uint16_t fft_sel(float* fft_data, float* sel_fft, pinfo* peak_info){
 	uint16_t sel_ind = 0;
 	uint16_t start = 0;
 	uint16_t end = 0;
@@ -85,6 +85,8 @@ void fft_sel(float* fft_data, float* sel_fft, pinfo* peak_info){
 			sel_ind++;
 		}
 	}
+
+	return sel_ind;
 }
 
 /* perform smoothing & peak area selection */

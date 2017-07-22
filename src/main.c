@@ -34,6 +34,7 @@ static uint16_t peak_num = 0;
 static float fft_data[NFFT] = {0}; //arranged into real(1), imag(1), real(2), imag(3)..so on
 static pinfo peak_info; //contain information about peak area of interest
 static float sel_fft[NFFT] = {0}; //contain fft data that has been selected
+static uint16_t sel_fft_datacount = 0; //contain how many data are selected (each 32-bit)
 
 // ----- main() ---------------------------------------------------------------
 int main(int argc, char* argv[]){
@@ -112,13 +113,15 @@ int main(int argc, char* argv[]){
 			//stopwatch_start();
 			fft_calc(signal_data, fft_data);
 			//trace_printf("fft tcalc (us), %0.3f\n",stopwatch_end());
-			fft_sel(fft_data, sel_fft, &peak_info);
+			sel_fft_datacount = fft_sel(fft_data, sel_fft, &peak_info);
 
 			state = S_PHASE2_COM;
 		}
 		else if(state == S_PHASE2_COM){
 			//transmit FFT data
+			transmit_fft(sel_fft, sel_fft_datacount);
 
+			//increase iteration counter & check
 			phase2_iter_counter++;
 			if(phase2_iter_counter >= peak_info.numiter){
 				phase2_iter_counter = 0;
