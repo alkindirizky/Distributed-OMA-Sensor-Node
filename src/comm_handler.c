@@ -25,8 +25,6 @@ void transmit_fft(float* fft_data, uint16_t fft_datacount){
 	uint16_t size_remainder = (fft_datacount*4 + 3) % MAX_PAYLOAD_SIZE;//in byte
 	uint16_t num_packet = ((fft_datacount*4 + 3) - size_remainder)/ MAX_PAYLOAD_SIZE;
 
-	trace_printf("datasize : %d, number of packet : %d\n", fft_datacount, num_packet);
-
 	for(uint16_t i=0; i<num_packet;i++){
 		//copy the header
 		payload[0] = TTYPE_PEAKLOC; //packet type
@@ -53,12 +51,13 @@ uint8_t dummy_receive_check(void){
 
 //obtain peak info for peak selection
 void dummy_receive_pinfo(pinfo* peak_info, uint16_t* peak_loc, uint16_t peak_num){
-	const uint16_t pband[2] = {PAREA_BAND, PEAK_BAND};
-	const uint16_t piter[2] = {ITER1, ITER2};
+	const uint16_t pband[3] = {0,PAREA_BAND, PEAK_BAND};
+	const uint16_t piter[3] = {0,ITER1, ITER2};
 	static uint8_t pband_ind = 0;
 
 	//save the area information
-	if(pband_ind<2){
+	pband_ind++;
+	if(pband_ind<3){
 		for(int16_t i=0; i<peak_num; i++){
 			peak_info->area[i].start = peak_loc[i] - pband[pband_ind]/2;
 			peak_info->area[i].end = peak_loc[i] + pband[pband_ind]/2;
@@ -70,5 +69,4 @@ void dummy_receive_pinfo(pinfo* peak_info, uint16_t* peak_loc, uint16_t peak_num
 		peak_info->numiter = 0; //break the test
 		pband_ind = 0;
 	}
-	pband_ind++;
 }

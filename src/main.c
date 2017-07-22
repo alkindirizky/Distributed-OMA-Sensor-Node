@@ -38,6 +38,9 @@ static uint16_t sel_fft_datacount = 0; //contain how many data are selected (eac
 
 // ----- main() ---------------------------------------------------------------
 int main(int argc, char* argv[]){
+	uint16_t testloop = 0;
+	uint16_t tstate = 2;
+
 	//state machines
 	uint8_t state = S_INIT;
 	uint8_t procphase = PHASE1;
@@ -57,6 +60,7 @@ int main(int argc, char* argv[]){
 		}
 		else if(state == S_PHASE_SIG_ACQ){
 			//polling signal data and update counter
+			stopwatch_start();
 			accelero_fifo_poll(signal_data + signal_counter);
 			signal_counter += 32;
 
@@ -68,16 +72,14 @@ int main(int argc, char* argv[]){
 				else if(procphase == PHASE2){
 					state = S_PHASE2_SIG_PROC;
 				}
+				trace_printf("sa%d%d, %0.4f\n",procphase,tstate,stopwatch_stop());
 			}
 		}
 		else if(state == S_PHASE1_SIG_PROC){
 			//create autopsd, perform fft first
-			//stopwatch_start();
+			stopwatch_start();
 			fft_calc(signal_data, fft_data);
-			//trace_printf("fft tcalc (us), %0.3f\n",stopwatch_end());
-			//stopwatch_start();
 			psd_calc(fft_data, psd_data);
-			//trace_printf("psd tcalc (us), %0.3f\n",stopwatch_end());
 			psd_wincount += 1;
 
 			if(psd_wincount >= PSD_NWINDOW){
@@ -88,64 +90,85 @@ int main(int argc, char* argv[]){
 				//obtain new window
 				state = S_PHASE_SIG_ACQ;
 			}
+			trace_printf("psd, %0.4f\n",stopwatch_stop());
 		}
 		else if(state == S_PHASE1_PEAK_SEL){
 			//selecting peak from PSD data
-			//stopwatch_start();
+			stopwatch_start();
 			peak_num = peak_sel(psd_data, peak_loc);
-			//trace_printf("peaksel tcalc (us), %0.3f\n",stopwatch_end());
-			peak_print(peak_loc,peak_num);
 
 			state = S_PHASE1_COM;
+			trace_printf("pp, %0.4f\n",stopwatch_stop());
 		}
 		else if(state == S_PHASE1_COM){
 			//transmit the obtained peaks
+			stopwatch_start();
 			transmit_peakloc(peak_loc, peak_num);
+			trace_printf("ppc, %0.4f\n",stopwatch_stop());
 
 			//wait to receive data from central
+			stopwatch_start();
 			procphase = dummy_receive_check();
 			if(procphase == PHASE2){
 				dummy_receive_pinfo(&peak_info, peak_loc, peak_num);
 			}
 			state = S_PHASE_SIG_ACQ;
+			trace_printf("cp, %0.4f\n",stopwatch_stop());
 		}
 		else if(state == S_PHASE2_SIG_PROC){
-			//stopwatch_start();
+			stopwatch_start();
 			fft_calc(signal_data, fft_data);
-			//trace_printf("fft tcalc (us), %0.3f\n",stopwatch_end());
+			trace_printf("fft%d, %0.4f\n",tstate,stopwatch_stop());
+			stopwatch_start();
 			sel_fft_datacount = fft_sel(fft_data, sel_fft, &peak_info);
 
+
 			state = S_PHASE2_COM;
+			trace_printf("fftsel%d, %0.4f\n",tstate, stopwatch_stop());
 		}
 		else if(state == S_PHASE2_COM){
 			//transmit FFT data
+			stopwatch_start();
 			transmit_fft(sel_fft, sel_fft_datacount);
 
 			//increase iteration counter & check
 			phase2_iter_counter++;
 			if(phase2_iter_counter >= peak_info.numiter){
 				phase2_iter_counter = 0;
+				trace_printf("fp%d, %0.4f\n",tstate,stopwatch_stop());
 
 				//wait to receive data from central
+				stopwatch_start();
 				procphase = dummy_receive_check();
 				if(procphase == PHASE2){
 					dummy_receive_pinfo(&peak_info, peak_loc, peak_num);
 				}
 
-				trace_printf("nex_iteration:%d\n", peak_info.numiter);
 				if(peak_info.numiter == 0){ //for testing
 					state = S_SLEEP; //go to sleep
-				}else{
+					trace_printf("cp%d, %0.4f\n",tstate,stopwatch_stop());
+				}
+				else{
 					state = S_PHASE_SIG_ACQ;
+					trace_printf("cp%d, %0.4f\n",tstate,stopwatch_stop());
+					tstate = 3;
 				}
 			}
 			else{
 				state = S_PHASE_SIG_ACQ; //perform next iteration
+				trace_printf("fp%d, %0.4f\n",tstate,stopwatch_stop());
 			}
 		}
 		else if(state == S_SLEEP){
-			trace_printf("GO TO SLEEP\n");
-			break;
+			testloop++;
+			if(testloop<15){
+				procphase = PHASE1;
+				state = S_PHASE_SIG_ACQ;
+				tstate = 2;
+			}else{
+				trace_printf("SLEEP ------------ \n");
+				break;
+			}
 		}
 	}
 	return 0;
