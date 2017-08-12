@@ -1,10 +1,10 @@
 #ifndef TESTSETTING_H_
 #define TESTSETTING_H_
 
-#define ITER1 1
-#define ITER2 1
+#define ITER1 42
+#define ITER2 42
 
-#define TESTPEAK5
+#define TESTPEAK4
 
 
 

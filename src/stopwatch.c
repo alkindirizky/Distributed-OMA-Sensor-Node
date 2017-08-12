@@ -27,7 +27,7 @@ void stopwatch_start(void){
 }
 
 //stop timer, return time as microsecond
-float stopwatch_end(void){
+float stopwatch_stop(void){
 	tend = GetCycleCounter();
 	float etime = (float)(tend - tstart);
 	etime = etime/SystemCoreClock*1000000.00f;

@@ -32,7 +32,7 @@
 #define FIL_ORDER 3
 #define FIL_LEN 13
 
-#define MAX_PEAKNUM PSD_SIZE/16
+#define MAX_PEAKNUM 20
 #define PEAK_DOM_DIV 20.00f
 #define PEAK_THRESH_MULT 0.4f
 #define PAREA_BAND 40 //sample size, equal to 20Hz for Fsampling 500 & NFFT 2048

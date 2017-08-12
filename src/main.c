@@ -1,15 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "diag/Trace.h"
 
 #include "procsetting.h"
 #include "common_struct.h"
 #include "acc_driver.h"
 #include "signal_proc.h"
 #include "comm_handler.h"
-
-#include "stopwatch.h"
-#include "debug_functions.h"
 
 //----- GCC Pragmas ------------------------------------------------------
 // Sample pragmas to cope with warnings. Please note the related line at
@@ -33,7 +29,6 @@ static uint16_t peak_num = 0;
 //variables for FFT result & 2nd phase peak selection
 static float fft_data[NFFT] = {0}; //arranged into real(1), imag(1), real(2), imag(3)..so on
 static pinfo peak_info; //contain information about peak area of interest
-static float sel_fft[NFFT] = {0}; //contain fft data that has been selected
 static uint16_t sel_fft_datacount = 0; //contain how many data are selected (each 32-bit)
 
 // ----- main() ---------------------------------------------------------------
@@ -45,9 +40,6 @@ int main(int argc, char* argv[]){
 	//iteration counter
 	uint16_t psd_wincount = 0; //how many psd window processed
 	uint16_t phase2_iter_counter = 0; //how many phase cycle elapsed
-
-	//init stopwatch
-	stopwatch_init();
 
 	while(1){
 		if(state == S_INIT){
@@ -72,12 +64,8 @@ int main(int argc, char* argv[]){
 		}
 		else if(state == S_PHASE1_SIG_PROC){
 			//create autopsd, perform fft first
-			//stopwatch_start();
 			fft_calc(signal_data, fft_data);
-			//trace_printf("fft tcalc (us), %0.3f\n",stopwatch_end());
-			//stopwatch_start();
 			psd_calc(fft_data, psd_data);
-			//trace_printf("psd tcalc (us), %0.3f\n",stopwatch_end());
 			psd_wincount += 1;
 
 			if(psd_wincount >= PSD_NWINDOW){
@@ -85,16 +73,13 @@ int main(int argc, char* argv[]){
 				psd_wincount = 0;
 				state = S_PHASE1_PEAK_SEL;
 			}else{
-				//obtain new window
+				//need to obtain new window
 				state = S_PHASE_SIG_ACQ;
 			}
 		}
 		else if(state == S_PHASE1_PEAK_SEL){
 			//selecting peak from PSD data
-			//stopwatch_start();
 			peak_num = peak_sel(psd_data, peak_loc);
-			//trace_printf("peaksel tcalc (us), %0.3f\n",stopwatch_end());
-			peak_print(peak_loc,peak_num);
 
 			state = S_PHASE1_COM;
 		}
@@ -102,7 +87,7 @@ int main(int argc, char* argv[]){
 			//transmit the obtained peaks
 			transmit_peakloc(peak_loc, peak_num);
 
-			//wait to receive data from central
+			//wait to receive command from central
 			procphase = dummy_receive_check();
 			if(procphase == PHASE2){
 				dummy_receive_pinfo(&peak_info, peak_loc, peak_num);
@@ -110,32 +95,30 @@ int main(int argc, char* argv[]){
 			state = S_PHASE_SIG_ACQ;
 		}
 		else if(state == S_PHASE2_SIG_PROC){
-			//stopwatch_start();
 			fft_calc(signal_data, fft_data);
-			//trace_printf("fft tcalc (us), %0.3f\n",stopwatch_end());
-			sel_fft_datacount = fft_sel(fft_data, sel_fft, &peak_info);
+			sel_fft_datacount = fft_sel(fft_data, &peak_info);
 
 			state = S_PHASE2_COM;
 		}
 		else if(state == S_PHASE2_COM){
 			//transmit FFT data
-			transmit_fft(sel_fft, sel_fft_datacount);
+			transmit_fft(fft_data, sel_fft_datacount);
 
 			//increase iteration counter & check
 			phase2_iter_counter++;
 			if(phase2_iter_counter >= peak_info.numiter){
 				phase2_iter_counter = 0;
 
-				//wait to receive data from central
+				//wait to receive command from central
 				procphase = dummy_receive_check();
 				if(procphase == PHASE2){
 					dummy_receive_pinfo(&peak_info, peak_loc, peak_num);
 				}
 
-				trace_printf("nex_iteration:%d\n", peak_info.numiter);
 				if(peak_info.numiter == 0){ //for testing
 					state = S_SLEEP; //go to sleep
-				}else{
+				}
+				else{
 					state = S_PHASE_SIG_ACQ;
 				}
 			}
@@ -144,7 +127,7 @@ int main(int argc, char* argv[]){
 			}
 		}
 		else if(state == S_SLEEP){
-			trace_printf("GO TO SLEEP\n");
+			/*TODO implement sleep & reactivate strategy here*/
 			break;
 		}
 	}

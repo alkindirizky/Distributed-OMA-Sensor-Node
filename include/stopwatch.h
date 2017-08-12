@@ -41,6 +41,6 @@
 void stopwatch_init(void);
 void stopwatch_reset(void);
 void stopwatch_start(void);
-float stopwatch_end(void);
+float stopwatch_stop(void);
 
 #endif //STOPWATCH_H_
