@@ -4,16 +4,16 @@
 // ----------- DWT (Data Watchpoint and Trace)  Core Registers -------------------------------
 
 //DWT control registers
-#define DWT_CTRL_REG	(*((volatile uint32_t*)0xE0001000))
+#define DWT_CTRL_REG    (*((volatile uint32_t*)0xE0001000))
 //DWT cycle counter register
-#define DWT_CYCCNT_REG	(*((volatile uint32_t*)0xE0001004))
+#define DWT_CYCCNT_REG    (*((volatile uint32_t*)0xE0001004))
 //Debug Exception and Monitor Control Register
-#define DEMCR_REG	(*((volatile uint32_t*)0xE000EDFC))
+#define DEMCR_REG    (*((volatile uint32_t*)0xE000EDFC))
 
 //Enable bit for DEMCR register
-#define DEMCR_ENA_BIT	(1UL<<24)
+#define DEMCR_ENA_BIT    (1UL<<24)
 //Enable bit for DWT cycle counting
-#define CYCCNT_ENA_BIT	(1UL<<0)
+#define CYCCNT_ENA_BIT    (1UL<<0)
 
 
 // ---------- Macro Functions for DWT ---------------------------------------------------------
